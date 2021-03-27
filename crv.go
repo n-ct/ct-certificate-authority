@@ -17,16 +17,8 @@ var (
 
 )
 
-func getCRVDelta(revocationNumbers []uint64) (*bitarray.BitArray) {
-	maxNum := max(revocationNumbers)
-	crvDelta := bitarray.NewBitArray(maxNum + 1)	
-	for _, revocationNum := range revocationNumbers {
-		crvDelta.SetBit(revocationNum)
-	}
-	return &crvDelta
-}
 
-func compressCRV(crv *bitarray.BitArray) ([]byte, error) {
+func CompressCRV(crv *bitarray.BitArray) ([]byte, error) {
 	serializedCRV, err := bitarray.Marshal(*crv)
 	if err != nil {
         return nil, fmt.Errorf("failed to serialize crv: %v", err)
@@ -45,7 +37,7 @@ func compressCRV(crv *bitarray.BitArray) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func decompressCRV(compressedCRV []byte) (*bitarray.BitArray, error) {
+func DecompressCRV(compressedCRV []byte) (*bitarray.BitArray, error) {
 	buf := bytes.NewBuffer(compressedCRV)
     r, err := xz.NewReader(buf)
     if err != nil {
@@ -62,7 +54,16 @@ func decompressCRV(compressedCRV []byte) (*bitarray.BitArray, error) {
 	return &crv, nil
 }
 
-func createCRV(revocationNumbers []uint64, length uint64) (*bitarray.BitArray) {
+func GetCRVDelta(revocationNumbers []uint64) (*bitarray.BitArray) {
+	maxNum := max(revocationNumbers)
+	crvDelta := bitarray.NewBitArray(maxNum + 1)	
+	for _, revocationNum := range revocationNumbers {
+		crvDelta.SetBit(revocationNum)
+	}
+	return &crvDelta
+}
+
+func CreateCRV(revocationNumbers []uint64, length uint64) (*bitarray.BitArray) {
 	maxRevNum := max(revocationNumbers)
 	bitArrayLength := max([]uint64{maxRevNum, length})
 	crvDelta := bitarray.NewBitArray(bitArrayLength + 1)	
@@ -73,6 +74,11 @@ func createCRV(revocationNumbers []uint64, length uint64) (*bitarray.BitArray) {
 	return &crvDelta
 }
 
+func ApplyCRVDeltaToCRV(crv, crvDelta *bitarray.BitArray) *bitarray.BitArray {
+	newCRV := (*crv).Or(*crvDelta)
+	return &newCRV
+}
+
 func max(array []uint64) uint64 {
     max := uint64(0)
     for _, value := range array {
@@ -81,11 +87,4 @@ func max(array []uint64) uint64 {
         }
     }
     return max
-}
-
-func writeToFile(fileName string, contents []byte) {
-	err := ioutil.WriteFile(fileName, contents, 0644)
-	if err != nil {
-		fmt.Printf("Failed to write to file: %v", err)
-	}
 }
