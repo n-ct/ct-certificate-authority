@@ -10,17 +10,17 @@ import (
 	*/
 	"github.com/Workiva/go-datastructures/bitarray"
 
-	mtr "github.com/n-ct/ct-monitor"
+	//mtr "github.com/n-ct/ct-monitor"
 	"github.com/n-ct/ct-monitor/signature"
 )
 
 type CA struct {
 	LogURLMap map[string] string // Maybe just have this be map[log]logURL
 	RevocationObjMap map[string] *bitarray.BitArray
-	CASignedDigestMap map[string][uint64] *mtr.SRDWithRevData
-	LogSignedDigestMap map[string][uint64] *mtr.SRDWithRevData
 	ListenAddress string 
 	MMD	uint64
+	//CASignedDigestMap map[string][string] *mtr.SRDWithRevData
+	//LogSignedDigestMap map[string][string] *mtr.SRDWithRevData
 	Signer *signature.Signer
 }
 

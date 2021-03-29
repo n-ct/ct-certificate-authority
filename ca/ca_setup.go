@@ -7,7 +7,7 @@ import (
 
 	"github.com/Workiva/go-datastructures/bitarray"
 
-	mtr "github.com/n-ct/ct-monitor"
+	//mtr "github.com/n-ct/ct-monitor"
 	"github.com/n-ct/ct-monitor/entitylist"
 	"github.com/n-ct/ct-monitor/utils"
 	"github.com/n-ct/ct-monitor/signature"
@@ -32,9 +32,10 @@ func createCA(caConfigName string, caListName string, logListName string) (*CA, 
 		return nil, fmt.Errorf("failed to setup new ca: %w", err)
 	}
 	revObjMap := make(map[string] *bitarray.BitArray)
-	caSignedDigestMap := make(map[string][uint64] *mtr.SRDWithRevData)
-	logSignedDigestMap := make(map[string][uint64] *mtr.SRDWithRevData)
-	ca := &CA{logURLMap, revObjMap, caSignedDigestMap, logSignedDigestMap, *caURL, *mmd, signer}
+	//caSignedDigestMap := make(map[string][uint64] *mtr.SRDWithRevData)
+	//logSignedDigestMap := make(map[string][uint64] *mtr.SRDWithRevData)
+	//ca := &CA{logURLMap, revObjMap, caSignedDigestMap, logSignedDigestMap, *caURL, *mmd, signer}
+	ca := &CA{logURLMap, revObjMap, *caURL, *mmd, signer}
 	return ca, nil
 }
 
@@ -93,11 +94,11 @@ func createSigner(caConfig *CAConfig) (*signature.Signer, error) {
 func getCAListInfo(caListName string, caConfig *CAConfig) (*string, *uint64, error) {
 	caList, err := entitylist.NewCAList(caListName)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("error creating ca list for ca config: %w", err)
+		return nil, nil, fmt.Errorf("error creating ca list for ca config: %w", err)
 	}
 	caInfo := caList.FindCAByCAID(caConfig.CAID)
 	csplit := strings.Split(caInfo.CAURL, ":")
 	caURL := csplit[1][2:] + ":" + csplit[2]
 	mmd := caInfo.MMD
-	return &caURL, &caURL, nil
+	return &caURL, &mmd, nil
 }
