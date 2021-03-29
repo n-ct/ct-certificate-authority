@@ -14,6 +14,7 @@ import (
 	ctca "github.com/n-ct/ct-certificate-authority"
 	"github.com/n-ct/ct-certificate-authority/ca"
 	"github.com/n-ct/ct-certificate-authority/handler"
+	"github.com/n-ct/ct-certificate-authority/sequencer"
 )
 
 var (
@@ -46,6 +47,9 @@ func main(){
 	// Create http.Server instance for the CA
 	server := serverSetup(caInstance)
 	glog.Infoln("Created ca http.Server")
+
+	// Start the Sequencer that will keep track of MMDs
+	startSequencer(caInstance)
 
 	// Handling the stop signal and closing things 
 	<-stop
@@ -89,6 +93,17 @@ func handlerSetup(c *ca.CA) (*http.ServeMux) {
 		}
 	})
 	return serveMux
+}
+
+func startSequencer(caInstance *ca.CA) {
+	glog.Infoln("Starting sequencer")
+	seqdone := make(chan bool)
+	go func() {
+		if err := sequencer.Run(seqdone, caInstance); err != nil {
+			glog.Exitf("failed to start sequencer: %v",err)
+		}
+	}()
+	glog.Infoln("Sequencer started")
 }
 
 func shutdownServer(server *http.Server, returnCode int){
