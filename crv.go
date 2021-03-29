@@ -17,7 +17,6 @@ var (
 
 )
 
-
 func CompressCRV(crv *bitarray.BitArray) ([]byte, error) {
 	serializedCRV, err := bitarray.Marshal(*crv)
 	if err != nil {
@@ -77,6 +76,10 @@ func CreateCRV(revocationNumbers []uint64, length uint64) (*bitarray.BitArray) {
 func ApplyCRVDeltaToCRV(crv, crvDelta *bitarray.BitArray) *bitarray.BitArray {
 	newCRV := (*crv).Or(*crvDelta)
 	return &newCRV
+}
+
+func Equals(crv1, crv2 *bitarray.BitArray) bool {
+	return (*crv1).Equals(*crv2)
 }
 
 func max(array []uint64) uint64 {

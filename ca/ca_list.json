@@ -1,0 +1,18 @@
+{
+    "operators": [
+        {
+            "name": "Nobody",
+            "email": [
+                "nothing@here.come"
+            ],
+            "cas": [
+                {
+                    "ca_id": "LeYXK29QzQV9RxvgMw+hnOeyZV85A6a5quOLltev9H0=",
+                    "ca_key": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEmFk6QT48Ts4oxSkBPM4mQ/mnWICKVmZUP6urQVBH0vhDzJVYHc2ShvF2KjWzorVu2C+tY6lIU+61iiPLsGvZXw==",
+                    "ca_url": "http://localhost:6000",
+                    "mmd": 2
+                }
+            ]
+        }
+    ]
+}
