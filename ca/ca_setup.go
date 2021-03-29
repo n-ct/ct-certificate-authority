@@ -7,7 +7,7 @@ import (
 
 	"github.com/Workiva/go-datastructures/bitarray"
 
-	//mtr "github.com/n-ct/ct-monitor"
+	mtr "github.com/n-ct/ct-monitor"
 	"github.com/n-ct/ct-monitor/entitylist"
 	"github.com/n-ct/ct-monitor/utils"
 	"github.com/n-ct/ct-monitor/signature"
@@ -32,10 +32,9 @@ func createCA(caConfigName string, caListName string, logListName string) (*CA, 
 		return nil, fmt.Errorf("failed to setup new ca: %w", err)
 	}
 	revObjMap := make(map[string] *bitarray.BitArray)
-	//caSignedDigestMap := make(map[string][uint64] *mtr.SRDWithRevData)
-	//logSignedDigestMap := make(map[string][uint64] *mtr.SRDWithRevData)
-	//ca := &CA{logURLMap, revObjMap, caSignedDigestMap, logSignedDigestMap, *caURL, *mmd, signer}
-	ca := &CA{logURLMap, revObjMap, *caURL, *mmd, signer}
+	caSignedDigestMap := make(map[string]map[uint64] *mtr.SRDWithRevData)
+	logSignedDigestMap := make(map[string]map[uint64] *mtr.SRDWithRevData)
+	ca := &CA{logURLMap, revObjMap, caSignedDigestMap, logSignedDigestMap, *caURL, *mmd, signer}
 	return ca, nil
 }
 

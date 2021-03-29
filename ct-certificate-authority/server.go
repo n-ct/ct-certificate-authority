@@ -13,6 +13,7 @@ import (
 	"github.com/golang/glog"
 	ctca "github.com/n-ct/ct-certificate-authority"
 	"github.com/n-ct/ct-certificate-authority/ca"
+	"github.com/n-ct/ct-certificate-authority/handler"
 )
 
 var (
@@ -77,7 +78,7 @@ func handlerSetup(c *ca.CA) (*http.ServeMux) {
 	handler := handler.NewHandler(c)
 	serveMux := http.NewServeMux()
 	serveMux.HandleFunc(ctca.GetRevocationStatusPath, handler.GetRevocationStatus)
-	serveMux.HandleFunc(ctca.PostLogRevocationDigestPath, handler.PostLogRevocationDigestPath)
+	serveMux.HandleFunc(ctca.PostLogRevocationDigestPath, handler.PostLogRevocationDigest)
 
 	// Return a 200 on the root so clients can easily check if server is up
 	serveMux.HandleFunc("/", func(resp http.ResponseWriter, req *http.Request) {

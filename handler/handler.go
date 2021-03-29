@@ -8,14 +8,14 @@ import (
 
 	"github.com/golang/glog"
 
-	"github.com/n-ct/ct-monitor/monitor"
+	"github.com/n-ct/ct-certificate-authority/ca"
 )
 
 type Handler struct {
-	m *monitor.Monitor
+	m *ca.CA
 }
 
-func NewHandler(m *monitor.Monitor) Handler {
+func NewHandler(m *ca.CA) Handler {
 	return Handler{m}
 }
 
@@ -77,13 +77,13 @@ func (h *Handler) GetRevocationStatus(rw http.ResponseWriter, req *http.Request)
 	}
 	logClient, ok := h.m.LogIDMap[logID[0]]
 	if !ok {
-		writeErrorResponse(&rw, http.StatusBadRequest, fmt.Sprintf("STHGossip request log-id param value invalid. %v log-id not found in Monitor's LogIDMap", logID))
+		writeErrorResponse(&rw, http.StatusBadRequest, fmt.Sprintf("STHGossip request log-id param value invalid. %v log-id not found in CA's LogIDMap", logID))
 		return
 	}
 	ctx := context.Background()
 	sth, err := logClient.GetSTH(ctx)
 	if err != nil {
-		writeErrorResponse(&rw, http.StatusBadRequest, fmt.Sprintf("Monitor failed to getSTH from logger with log-id (%v): %v", logID, err))
+		writeErrorResponse(&rw, http.StatusBadRequest, fmt.Sprintf("CA failed to getSTH from logger with log-id (%v): %v", logID, err))
 		return
 	}
 	h.m.Gossip(sth)
