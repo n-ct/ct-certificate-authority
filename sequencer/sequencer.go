@@ -26,13 +26,14 @@ func Run(done chan bool, caInstance *ca.CA) error {
 			caInstance.UpdateMMD()
 			glog.Infoln("New MMD")
 			glog.Infof("DeltaRevocations: %v", caInstance.DeltaRevocations)
+
 			// Add delta revocations to crv
 			// TODO: Currently hardcoded to let's-revoke. Make modular later
 			revType := "Let's-Revoke"
-			glog.Infoln("Updating revocation objects")
-			caInstance.UpdateRevocationObjMap(revType)	
+			glog.Infoln("Doing revocation transparency tasks")
+			caInstance.DoRevocationTransparencyTasks(revType)	
 			glog.Infoln(*caInstance.RevocationObjMap[revType])
-			// Send SRD to Logger
+
 			// Clear delta revocations
 			if err = caInstance.ClearDeltaRevocations(); err != nil {
 				glog.Infof("failed to clear revocations in sequencer: %v", err)

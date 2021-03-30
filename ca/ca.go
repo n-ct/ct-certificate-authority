@@ -6,13 +6,13 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/golang/glog"
 	*/
 
 	"sync"
 	"time"
 	"fmt"
 
+	"github.com/golang/glog"
 	"github.com/Workiva/go-datastructures/bitarray"
 	"github.com/google/certificate-transparency-go/tls"
 
@@ -64,7 +64,7 @@ func (c *CA) DeltaRevocationsToList() []uint64 {
 	return revList
 }
 
-func (c *CA) UpdateRevocationObjMap(revType string) error {
+func (c *CA) DoRevocationTransparencyTasks(revType string) error {
 	deltaRevList := c.DeltaRevocationsToList()
 	crvDelta := ctca.GetCRVDelta(deltaRevList)
 	currCRV, ok := c.RevocationObjMap[revType]
@@ -75,16 +75,25 @@ func (c *CA) UpdateRevocationObjMap(revType string) error {
 	c.RevocationObjMap[revType] = newCRV
 
 	// Create SRD
+	srd, err := CreateSRDWithRevData(newCRV, crvDelta, c.PreviousMMDTimestamp, c.CAID, tls.SHA256, c.Signer)
+	if err != nil {
+		return fmt.Errorf("failed to create SRD at new MMD: %v", err)
+	}
+	glog.Infoln(srd)	
+
+	// Send SRD to Logger
 	return nil
 }
+
 
 func CreateSRDWithRevData(crv, deltaCRV *bitarray.BitArray, timestamp uint64, entityID string, hashAlgo tls.HashAlgorithm, signer *signature.Signer) (*mtr.SRDWithRevData, error) {
 	revData, err := createRevocationData(deltaCRV, timestamp, entityID)
 	if err != nil {
+		return nil, fmt.Errorf("failed SRDWithRevData creation: %w", err)
 	}
 	srd, err := createSRD(crv, deltaCRV, timestamp, entityID, hashAlgo, signer)
 	if err != nil {
-		return nil, fmt.Errorf("failed SRDWithRevData creation: %v", err)
+		return nil, fmt.Errorf("failed SRDWithRevData creation: %w", err)
 	}
 	srdWithRevData := &mtr.SRDWithRevData{
 		RevData: *revData,
