@@ -1,16 +1,11 @@
 package ca
 
 import (
-	/*"fmt"
-	"bytes"
-	"encoding/json"
-	"net/http"
-
-	*/
-
 	"sync"
 	"time"
 	"fmt"
+	"bytes"
+	"net/http"
 
 	"github.com/golang/glog"
 	"github.com/Workiva/go-datastructures/bitarray"
@@ -18,11 +13,13 @@ import (
 
 	mtr "github.com/n-ct/ct-monitor"
 	"github.com/n-ct/ct-monitor/signature"
+	"github.com/n-ct/ct-monitor/entitylist"
+	"github.com/n-ct/ct-monitor/utils"
 	ctca "github.com/n-ct/ct-certificate-authority"
 )
 
 type CA struct {
-	LogURLMap map[string] string // Maybe just have this be map[log]logURL
+	LogInfoMap map[string] *entitylist.LogInfo  // Maybe just have this be map[log]logURL
 	RevocationObjMap map[string] *bitarray.BitArray
 	CASignedDigestMap map[string]map[uint64] *mtr.SRDWithRevData
 	LogSignedDigestMap map[string]map[uint64]map[string] *mtr.SRDWithRevData
@@ -113,6 +110,7 @@ func (c *CA) DoRevocationTransparencyTasks(revType string) error {
 	c.AddCASRD(srd)
 
 	// Send SRD to Logger
+	//PostCASRD(srd)	
 	return nil
 }
 
@@ -199,28 +197,41 @@ func (c *CA) UpdateMMD() error {
 	return nil
 }
 
-// Make a post request to corresponding GossiperURL with the given ctObject
-/*func (m *CA) Gossip(ctObject *mtr.CTObject) error {
-	jsonBytes, err := json.Marshal(ctObject)	// Just use serialize method somewhere else
+// Make a post request to LogURLs with the given srd
+func (c *CA) PostCASRD(srd *mtr.SRDWithRevData) error {
+	jsonBytes, err := signature.SerializeData(*srd)	// Just use serialize method somewhere else
 	if err != nil {
-		return fmt.Errorf("failed to marshal %s ctobject when gossiping: %v", ctObject.TypeID, err)
+		return fmt.Errorf("failed to marshal SRDWithRevData (%v) when sending post to log: %v", srd, err)
 	}
-	gossipURL := utils.CreateRequestURL(m.GossiperURL, "/ct/v1/gossip")
-	glog.Infof("\ngossip CTObject using Gossiper at address: %s", gossipURL)
+	for _, logInfo := range c.LogInfoMap {
+		logURL := logInfo.URL
+		logPostURL := utils.CreateRequestURL(logURL, "/ct/v1/post-ca-srd")
+		glog.Infof("\ngossip CTObject using Gossiper at address: %s", logPostURL)
 
-	// Create request
-	req, err := http.NewRequest("POST", gossipURL, bytes.NewBuffer(jsonBytes)) 
-	req.Header.Set("X-Custom-Header", "myvalue");
-	req.Header.Set("Content-Type", "application/json");
+		// Create request
+		req, err := http.NewRequest("POST", logPostURL, bytes.NewBuffer(jsonBytes)) 
+		req.Header.Set("X-Custom-Header", "myvalue");
+		req.Header.Set("Content-Type", "application/json");
 
-	// Send request
-	client := &http.Client{};
-	resp, err := client.Do(req);
-	if err != nil {
-		panic(err);
+		// Send request
+		client := &http.Client{};
+		resp, err := client.Do(req);
+		if err != nil {
+			panic(err);
+		}
+
+		defer resp.Body.Close();
 	}
 
-	defer resp.Body.Close();
 	return nil
 }
-*/
+
+func (c *CA) VerifySRDSignature(srd *mtr.SignedRevocationDigest) error {
+	logID := srd.EntityID
+	logInfo, ok := c.LogInfoMap[logID]
+	if !ok {
+		return fmt.Errorf("logID (%v) not found in logInfoMap", logID)
+	}
+	logKey := logInfo.Key	
+	return signature.VerifySignature(logKey, srd.RevDigest, srd.Signature)
+}

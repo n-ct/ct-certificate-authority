@@ -19,7 +19,7 @@ func createCA(caConfigName string, caListName string, logListName string) (*CA, 
 	if nil != err {
 		return nil, fmt.Errorf("failed to setup new ca: %w", err)
 	}
-	logURLMap, err := createLogURLMap(caConfig, logListName)
+	logInfoMap, err := createLogInfoMap(caConfig, logListName)
 	if nil != err {
 		return nil, fmt.Errorf("failed to setup new ca: %w", err)
 	}
@@ -36,7 +36,7 @@ func createCA(caConfigName string, caListName string, logListName string) (*CA, 
 	logSignedDigestMap := make(map[string]map[uint64]map[string] *mtr.SRDWithRevData)
 	deltaRevocations := make(map[uint64] bool)
 	ca := &CA{
-		LogURLMap: logURLMap, 
+		LogInfoMap: logInfoMap, 
 		RevocationObjMap: revObjMap, 
 		CASignedDigestMap: caSignedDigestMap, 
 		LogSignedDigestMap: logSignedDigestMap, 
@@ -72,23 +72,22 @@ func parseCAConfig(caConfigName string) (*CAConfig, error) {
 }
 
 // Create a map of logger LogIDs to their corresponding LogClients
-func createLogURLMap(caConfig *CAConfig, logListName string) (map[string] string, error) {
-	logURLMap := make(map[string] string)
+func createLogInfoMap(caConfig *CAConfig, logListName string) (map[string] *entitylist.LogInfo, error) {
+	logInfoMap := make(map[string] *entitylist.LogInfo)
 	logList, err := entitylist.NewLogList(logListName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create loglist for logURLMap: %w", err)
 	}
 
 	// Iterate through all the LogIDs within caConfig and add the URLs to map along with their created logclients
-	for _, logURL := range caConfig.LogIDs {
-		log := logList.FindLogByLogID(logURL)
-		logURL := log.URL
+	for _, logID := range caConfig.LogIDs {
+		log := logList.FindLogByLogID(logID)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create logClient for logURLMap: %w", err)
+			return nil, fmt.Errorf("failed to create logClient for logInfoMap: %w", err)
 		}
-		logURLMap[logURL] = logURL
+		logInfoMap[logID] = log
 	}
-	return logURLMap, nil 
+	return logInfoMap, nil 
 }
 
 // Create signer for the CA

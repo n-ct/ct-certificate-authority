@@ -6,7 +6,7 @@ import (
 // Endpoint path const variables
 const (
 	GetRevocationStatusPath 	= "/ct/v1/get-revocation-status"
-	PostLogRevocationDigestPath	= "/ct/v1/post-log-revocation-digest"	
+	PostLogSRDWithRevDataPath	= "/ct/v1/post-log-srd-with-rev-data"	
 	PostNewRevocationNumsPath	= "/ct/v1/post-new-revocation-nums"
 
 )
