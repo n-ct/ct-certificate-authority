@@ -43,7 +43,7 @@ func (h *Handler) PostLogSRDWithRevData(rw http.ResponseWriter, req *http.Reques
 	}
 
 	// Verify Signature
-	if err := h.c.VerifySRDSignature(&srd.SRD); err != nil {
+	if err := h.c.VerifyLogSRDSignature(&srd.SRD); err != nil {
 		writeErrorResponse(&rw, http.StatusInternalServerError, fmt.Sprintf("invalid srd signature: %v", err))
 		return
 	}

@@ -226,12 +226,16 @@ func (c *CA) PostCASRD(srd *mtr.SRDWithRevData) error {
 	return nil
 }
 
-func (c *CA) VerifySRDSignature(srd *mtr.SignedRevocationDigest) error {
+func (c *CA) VerifyLogSRDSignature(srd *mtr.SignedRevocationDigest) error {
 	logID := srd.EntityID
 	logInfo, ok := c.LogInfoMap[logID]
 	if !ok {
 		return fmt.Errorf("logID (%v) not found in logInfoMap", logID)
 	}
 	logKey := logInfo.Key	
-	return signature.VerifySignature(logKey, srd.RevDigest, srd.Signature)
+	return VerifySRDSignature(srd, logKey)
+}
+
+func VerifySRDSignature(srd *mtr.SignedRevocationDigest, key string) error {
+	return signature.VerifySignature(key, srd.RevDigest, srd.Signature)
 }
