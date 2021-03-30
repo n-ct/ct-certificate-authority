@@ -39,6 +39,7 @@ func Run(done chan bool, caInstance *ca.CA) error {
 				glog.Infof("failed to clear revocations in sequencer: %v", err)
 			}
 			glog.Infof("Cleared deltaRevocations")
+			glog.Infoln(caInstance.CASignedDigestMap)
 
 		}
 	}

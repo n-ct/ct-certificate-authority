@@ -49,6 +49,34 @@ func (c *CA) AddRevocationNums(newRevocationNums *[]uint64) error {
 	return nil
 }
 
+func (c *CA) AddCASRD(srdWithRevData *mtr.SRDWithRevData) (error) {
+	c.Lock()
+	revType := srdWithRevData.RevData.RevocationType
+	timestamp := srdWithRevData.RevData.Timestamp
+	if _, ok := c.CASignedDigestMap[revType]; !ok {
+		c.CASignedDigestMap[revType] = make(map[uint64] *mtr.SRDWithRevData)
+	}
+	c.CASignedDigestMap[revType][timestamp] = srdWithRevData
+	c.Unlock()
+	return nil
+}
+
+func (c *CA) AddLogSRD(srdWithRevData *mtr.SRDWithRevData) (error) {
+	c.Lock()
+	revType := srdWithRevData.RevData.RevocationType
+	timestamp := srdWithRevData.RevData.Timestamp
+	logID := srdWithRevData.SRD.EntityID
+	if _, ok := c.LogSignedDigestMap[revType]; !ok {
+		c.LogSignedDigestMap[revType] = make(map[uint64]map[string] *mtr.SRDWithRevData)
+	}
+	if _, ok := c.LogSignedDigestMap[revType][timestamp]; !ok {
+		c.LogSignedDigestMap[revType][timestamp] = make(map[string] *mtr.SRDWithRevData)
+	}
+	c.LogSignedDigestMap[revType][timestamp][logID] = srdWithRevData
+	c.Unlock()
+	return nil
+}
+
 func (c *CA) ClearDeltaRevocations() error {
 	c.Lock()
 	c.DeltaRevocations = make(map[uint64]bool)
@@ -80,6 +108,9 @@ func (c *CA) DoRevocationTransparencyTasks(revType string) error {
 		return fmt.Errorf("failed to create SRD at new MMD: %v", err)
 	}
 	glog.Infoln(srd)	
+
+	// Store the SRD
+	c.AddCASRD(srd)
 
 	// Send SRD to Logger
 	return nil
