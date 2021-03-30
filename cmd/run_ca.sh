@@ -14,4 +14,4 @@ go build server.go
 
 # Go back to top level of the ct-certificate-authority directory and run the server
 cd "$CT_CA_BASE_DIR"
-ct-certificate-authority/server
+ct-certificate-authority/server -logtostderr=true

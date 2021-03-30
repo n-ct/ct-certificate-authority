@@ -60,8 +60,7 @@ func main(){
 // Sets up the basic ca http server
 func serverSetup(c *ca.CA) *http.Server{
 	serveMux := handlerSetup(c)
-	glog.Infof("Serving at address: %s", c.ListenAddress)
-	fmt.Printf("Serving at address: %s", c.ListenAddress)
+	glog.Infof("Serving at address: %s\n", c.ListenAddress)
 	server := &http.Server {
 		Addr: c.ListenAddress,
 		Handler: serveMux,
@@ -83,6 +82,7 @@ func handlerSetup(c *ca.CA) (*http.ServeMux) {
 	serveMux := http.NewServeMux()
 	serveMux.HandleFunc(ctca.GetRevocationStatusPath, handler.GetRevocationStatus)
 	serveMux.HandleFunc(ctca.PostLogRevocationDigestPath, handler.PostLogRevocationDigest)
+	serveMux.HandleFunc(ctca.PostNewRevocationNumsPath, handler.PostNewRevocationNums)
 
 	// Return a 200 on the root so clients can easily check if server is up
 	serveMux.HandleFunc("/", func(resp http.ResponseWriter, req *http.Request) {

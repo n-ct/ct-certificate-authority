@@ -1,9 +1,8 @@
 package handler
 
 import (
-	/*"fmt"
+	"fmt"
 	"encoding/json"
-	*/
 	"net/http"
 
 	"github.com/golang/glog"
@@ -12,11 +11,11 @@ import (
 )
 
 type Handler struct {
-	m *ca.CA
+	c *ca.CA
 }
 
-func NewHandler(m *ca.CA) Handler {
-	return Handler{m}
+func NewHandler(c *ca.CA) Handler {
+	return Handler{c}
 }
 
 func writeWrongMethodResponse(rw *http.ResponseWriter, allowed string) {
@@ -30,7 +29,7 @@ func writeErrorResponse(rw *http.ResponseWriter, status int, body string) {
 }
 
 func (h *Handler) PostLogRevocationDigest(rw http.ResponseWriter, req *http.Request){
-	glog.V(1).Infoln("Received PostLogRevocationDigest Request")
+	glog.Infoln("Received PostLogRevocationDigest Request")
 	if req.Method != "POST" {
 		writeWrongMethodResponse(&rw, "GET")
 		return
@@ -89,4 +88,26 @@ func (h *Handler) GetRevocationStatus(rw http.ResponseWriter, req *http.Request)
 	h.m.Gossip(sth)
 	rw.WriteHeader(http.StatusOK)
 	*/
+}
+
+type PostNewRevocationNumsRequest struct {
+	RevocationNums []uint64
+}
+
+func (h *Handler) PostNewRevocationNums(rw http.ResponseWriter, req *http.Request){
+	glog.Infoln("Received PostNewRevocationNums Request")
+	if req.Method != "POST" {
+		writeWrongMethodResponse(&rw, "GET")
+		return
+	}
+	decoder := json.NewDecoder(req.Body)
+	var newRevList PostNewRevocationNumsRequest
+	if err := decoder.Decode(&newRevList); err != nil {
+		writeErrorResponse(&rw, http.StatusBadRequest, fmt.Sprintf("Invalid PostNewRevocationNums Request: %v", err))
+		return
+	}
+	glog.Infoln(newRevList)
+	h.c.AddRevocationNums(&newRevList.RevocationNums)
+
+	rw.WriteHeader(http.StatusOK)
 }

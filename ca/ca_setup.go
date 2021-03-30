@@ -27,14 +27,26 @@ func createCA(caConfigName string, caListName string, logListName string) (*CA, 
 	if nil != err {
 		return nil, fmt.Errorf("failed to setup new ca: %w", err)
 	}
-	caURL, mmd, err := getCAListInfo(caListName, caConfig)
+	caURL, mmd, caID, err := getCAListInfo(caListName, caConfig)
 	if nil != err {
 		return nil, fmt.Errorf("failed to setup new ca: %w", err)
 	}
 	revObjMap := make(map[string] *bitarray.BitArray)
 	caSignedDigestMap := make(map[string]map[uint64] *mtr.SRDWithRevData)
-	logSignedDigestMap := make(map[string]map[uint64] *mtr.SRDWithRevData)
-	ca := &CA{logURLMap, revObjMap, caSignedDigestMap, logSignedDigestMap, *caURL, *mmd, signer}
+	logSignedDigestMap := make(map[string]map[uint64]map[string] *mtr.SRDWithRevData)
+	deltaRevocations := make(map[uint64] bool)
+	ca := &CA{
+		LogURLMap: logURLMap, 
+		RevocationObjMap: revObjMap, 
+		CASignedDigestMap: caSignedDigestMap, 
+		LogSignedDigestMap: logSignedDigestMap, 
+		DeltaRevocations: deltaRevocations, 
+		ListenAddress: *caURL, 
+		MMD: *mmd, 
+		CAID:*caID,
+		Signer: signer,
+
+	}
 	return ca, nil
 }
 
@@ -90,14 +102,15 @@ func createSigner(caConfig *CAConfig) (*signature.Signer, error) {
 }
 
 // Get CAList info from caList
-func getCAListInfo(caListName string, caConfig *CAConfig) (*string, *uint64, error) {
+func getCAListInfo(caListName string, caConfig *CAConfig) (*string, *uint64, *string, error) {
 	caList, err := entitylist.NewCAList(caListName)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error creating ca list for ca config: %w", err)
+		return nil, nil, nil, fmt.Errorf("error creating ca list for ca config: %w", err)
 	}
 	caInfo := caList.FindCAByCAID(caConfig.CAID)
 	csplit := strings.Split(caInfo.CAURL, ":")
 	caURL := csplit[1][2:] + ":" + csplit[2]
 	mmd := caInfo.MMD
-	return &caURL, &mmd, nil
+	caID := caInfo.CAID
+	return &caURL, &mmd, &caID, nil
 }
