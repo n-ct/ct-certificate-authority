@@ -58,6 +58,20 @@ func (c *CA) AddCASRD(srdWithRevData *mtr.SRDWithRevData) (error) {
 	return nil
 }
 
+func (c *CA) GetCASRD(revType string, timestamp uint64) (*mtr.SRDWithRevData, error) {
+	var caSRD *mtr.SRDWithRevData
+	c.RLock()
+	if _, ok := c.CASignedDigestMap[revType]; !ok {
+		return nil, fmt.Errorf("failed to find revType (%v) in caSRD map", revType)
+	}
+	if _, ok := c.CASignedDigestMap[revType][timestamp]; !ok {
+		return nil, fmt.Errorf("failed to find timestamp (%v) in caSRD map", timestamp)
+	}
+	caSRD = c.CASignedDigestMap[revType][timestamp]
+	c.RUnlock()
+	return caSRD, nil
+}
+
 func (c *CA) AddLogSRD(srdWithRevData *mtr.SRDWithRevData) (error) {
 	c.Lock()
 	revType := srdWithRevData.RevData.RevocationType
@@ -72,6 +86,43 @@ func (c *CA) AddLogSRD(srdWithRevData *mtr.SRDWithRevData) (error) {
 	c.LogSignedDigestMap[revType][timestamp][logID] = srdWithRevData
 	c.Unlock()
 	return nil
+}
+
+func (c *CA) GetLogSRD(revType string, timestamp uint64, logID string) (*mtr.SRDWithRevData, error) {
+	var logSRD *mtr.SRDWithRevData
+	c.RLock()
+	if _, ok := c.LogSignedDigestMap[revType]; !ok {
+		return nil, fmt.Errorf("failed to find revType (%v) in caSRD map", revType)
+	}
+	if _, ok := c.LogSignedDigestMap[revType][timestamp]; !ok {
+		return nil, fmt.Errorf("failed to find timestamp (%v) in caSRD map", timestamp)
+	}
+	if _, ok := c.LogSignedDigestMap[revType][timestamp][logID]; !ok {
+		return nil, fmt.Errorf("failed to find logID (%v) in caSRD map", logID)
+	}
+	logSRD = c.LogSignedDigestMap[revType][timestamp][logID]
+	c.RUnlock()
+	return logSRD, nil
+}
+
+func (c *CA) GetRecentLogSRDCTObjecList(revType string, timestamp uint64) ([]mtr.CTObject, error) {
+	var logSRDs []mtr.CTObject
+	c.RLock()
+	if _, ok := c.LogSignedDigestMap[revType]; !ok {
+		return nil, fmt.Errorf("failed to find revType (%v) in caSRD map", revType)
+	}
+	if _, ok := c.LogSignedDigestMap[revType][timestamp]; !ok {
+		return nil, fmt.Errorf("failed to find timestamp (%v) in caSRD map", timestamp)
+	}
+	for _, v := range c.LogSignedDigestMap[revType][timestamp] {
+		logSRDCTObj, err := mtr.ConstructCTObject(v)
+		if err != nil {
+			return nil, fmt.Errorf("failed to construct SRDCTObject: %w", err)
+		}
+		logSRDs = append(logSRDs, *logSRDCTObj)
+	}
+	c.RUnlock()
+	return logSRDs, nil
 }
 
 func (c *CA) ClearDeltaRevocations() error {
@@ -238,4 +289,26 @@ func (c *CA) VerifyLogSRDSignature(srd *mtr.SignedRevocationDigest) error {
 
 func VerifySRDSignature(srd *mtr.SignedRevocationDigest, key string) error {
 	return signature.VerifySignature(key, srd.RevDigest, srd.Signature)
+}
+
+func (c * CA) GetLatestRevocationStatus() (*ctca.RevocationStatus, error) {
+	latestTimestamp := c.PreviousMMDTimestamp - c.MMD
+	revType := "Let's-Revoke"
+	caSRD, err := c.GetCASRD(revType, latestTimestamp)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get CASRD for revocationStatus: %w", err)
+	}
+	caSRDCTObj, err := mtr.ConstructCTObject(caSRD)
+	if err != nil {
+		return nil, fmt.Errorf("failed to construct CASRDCTObject: %w", err)
+	}
+	logSRDs, err := c.GetRecentLogSRDCTObjecList(revType, latestTimestamp)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get logSRDs for revocationStatus: %w", err)
+	}
+	revocationStatus := &ctca.RevocationStatus{
+		CASRD: *caSRDCTObj, 
+		LogSRDs: logSRDs,
+	}
+	return revocationStatus, nil
 }

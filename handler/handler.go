@@ -68,26 +68,16 @@ func (h *Handler) GetRevocationStatus(rw http.ResponseWriter, req *http.Request)
 		writeWrongMethodResponse(&rw, "GET")
 		return
 	}
-	/*
-	logID, ok := req.URL.Query()["log-id"]
-	if !ok {
-		writeErrorResponse(&rw, http.StatusBadRequest, fmt.Sprintf("STHGossip request missing log-id param"))
-		return
-	}
-	logClient, ok := h.m.LogIDMap[logID[0]]
-	if !ok {
-		writeErrorResponse(&rw, http.StatusBadRequest, fmt.Sprintf("STHGossip request log-id param value invalid. %v log-id not found in CA's LogIDMap", logID))
-		return
-	}
-	ctx := context.Background()
-	sth, err := logClient.GetSTH(ctx)
+	revocationStatus, err := h.c.GetLatestRevocationStatus()
 	if err != nil {
-		writeErrorResponse(&rw, http.StatusBadRequest, fmt.Sprintf("CA failed to getSTH from logger with log-id (%v): %v", logID, err))
+		writeErrorResponse(&rw, http.StatusInternalServerError, fmt.Sprintf("Couldn't produce revocationStatus: %v", err))
+	}
+	encoder := json.NewEncoder(rw)
+	if err := encoder.Encode(*revocationStatus); err != nil {
+		writeErrorResponse(&rw, http.StatusInternalServerError, fmt.Sprintf("Couldn't encode RevocationStatus response to return: %v", err))
 		return
 	}
-	h.m.Gossip(sth)
 	rw.WriteHeader(http.StatusOK)
-	*/
 }
 
 type PostNewRevocationNumsRequest struct {
