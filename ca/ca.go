@@ -161,10 +161,20 @@ func (c *CA) DoRevocationTransparencyTasks(revType string) error {
 	c.AddCASRD(srd)
 
 	// Send SRD to Logger
+	// UNCOMMENT THE POSTCASRD
+	// UNCOMMENT THE POSTCASRD
+	// UNCOMMENT THE POSTCASRD
+	// UNCOMMENT THE POSTCASRD
+	// UNCOMMENT THE POSTCASRD
+	// UNCOMMENT THE POSTCASRD
+	// UNCOMMENT THE POSTCASRD
+	// UNCOMMENT THE POSTCASRD
+	// UNCOMMENT THE POSTCASRD
+	// UNCOMMENT THE POSTCASRD
+	// UNCOMMENT THE POSTCASRD
 	//PostCASRD(srd)	
 	return nil
 }
-
 
 func CreateSRDWithRevData(crv, deltaCRV *bitarray.BitArray, timestamp uint64, entityID string, hashAlgo tls.HashAlgorithm, signer *signature.Signer) (*mtr.SRDWithRevData, error) {
 	revData, err := createRevocationData(deltaCRV, timestamp, entityID)
@@ -291,7 +301,7 @@ func VerifySRDSignature(srd *mtr.SignedRevocationDigest, key string) error {
 	return signature.VerifySignature(key, srd.RevDigest, srd.Signature)
 }
 
-func (c * CA) GetLatestRevocationStatus() (*ctca.RevocationStatus, error) {
+func (c *CA) GetLatestRevocationStatus() (*ctca.RevocationStatus, error) {
 	latestTimestamp := c.PreviousMMDTimestamp - c.MMD
 	revType := "Let's-Revoke"
 	caSRD, err := c.GetCASRD(revType, latestTimestamp)
