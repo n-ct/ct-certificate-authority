@@ -44,13 +44,13 @@ func (h *Handler) PostLogSRDWithRevData(rw http.ResponseWriter, req *http.Reques
 
 	// Verify Signature
 	if err := h.c.VerifyLogSRDSignature(&srd.SRD); err != nil {
-		writeErrorResponse(&rw, http.StatusInternalServerError, fmt.Sprintf("invalid srd signature: %v", err))
+		writeErrorResponse(&rw, http.StatusInternalServerError, fmt.Sprintf("invalid logSRD signature: %v", err))
 		return
 	}
 
 	// Add the Log SRD to map
 	if err := h.c.AddLogSRD(&srd); err != nil {
-		writeErrorResponse(&rw, http.StatusInternalServerError, fmt.Sprintf("failed to add to ca data structure: %v", err))
+		writeErrorResponse(&rw, http.StatusInternalServerError, fmt.Sprintf("failed to add logSRD ca data structure: %v", err))
 		return
 	}
 	/*encoder := json.NewEncoder(rw)
@@ -74,7 +74,7 @@ func (h *Handler) GetRevocationStatus(rw http.ResponseWriter, req *http.Request)
 	}
 	encoder := json.NewEncoder(rw)
 	if err := encoder.Encode(*revocationStatus); err != nil {
-		writeErrorResponse(&rw, http.StatusInternalServerError, fmt.Sprintf("Couldn't encode RevocationStatus response to return: %v", err))
+		writeErrorResponse(&rw, http.StatusInternalServerError, fmt.Sprintf("Couldn't encode RevocationStatus response: %v", err))
 		return
 	}
 	rw.WriteHeader(http.StatusOK)
@@ -98,6 +98,5 @@ func (h *Handler) PostNewRevocationNums(rw http.ResponseWriter, req *http.Reques
 	}
 	glog.Infoln(newRevList)
 	h.c.AddRevocationNums(&newRevList.RevocationNums)
-
 	rw.WriteHeader(http.StatusOK)
 }

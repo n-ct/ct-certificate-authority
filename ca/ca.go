@@ -155,7 +155,6 @@ func (c *CA) DoRevocationTransparencyTasks(revType string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create SRD at new MMD: %v", err)
 	}
-	glog.Infoln(srd)	
 
 	// Store the SRD
 	c.AddCASRD(srd)

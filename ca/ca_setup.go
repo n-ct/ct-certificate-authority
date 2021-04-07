@@ -54,7 +54,7 @@ func createCA(caConfigName string, caListName string, logListName string) (*CA, 
 type CAConfig struct {
 	LogIDs []string `json:"log_ids"`
 	CAID string `json:"ca_id"`
-	StrPrivKey string `json:"private_key"`
+	StrPrivKey string `json:"priv_key"`
 }
 
 // Parse caConfig json file 
