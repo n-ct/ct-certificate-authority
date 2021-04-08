@@ -83,6 +83,7 @@ func handlerSetup(c *ca.CA) (*http.ServeMux) {
 	serveMux.HandleFunc(ctca.GetRevocationStatusPath, handler.GetRevocationStatus)
 	serveMux.HandleFunc(ctca.PostLogSRDWithRevDataPath, handler.PostLogSRDWithRevData)
 	serveMux.HandleFunc(ctca.PostNewRevocationNumsPath, handler.PostNewRevocationNums)
+	serveMux.HandleFunc(ctca.RevokeAndProduceSRDPath, handler.RevokeAndProduceSRD)
 
 	// Return a 200 on the root so clients can easily check if server is up
 	serveMux.HandleFunc("/", func(resp http.ResponseWriter, req *http.Request) {

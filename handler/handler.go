@@ -9,6 +9,7 @@ import (
 	"github.com/n-ct/ct-certificate-authority/ca"
 
 	mtr "github.com/n-ct/ct-monitor"
+	ctca "github.com/n-ct/ct-certificate-authority"
 )
 
 type Handler struct {
@@ -32,7 +33,7 @@ func writeErrorResponse(rw *http.ResponseWriter, status int, body string) {
 func (h *Handler) PostLogSRDWithRevData(rw http.ResponseWriter, req *http.Request){
 	glog.Infoln("Received PostLogRevocationDigest Request")
 	if req.Method != "POST" {
-		writeWrongMethodResponse(&rw, "GET")
+		writeWrongMethodResponse(&rw, "POST")
 		return
 	}
 	decoder := json.NewDecoder(req.Body)
@@ -80,23 +81,45 @@ func (h *Handler) GetRevocationStatus(rw http.ResponseWriter, req *http.Request)
 	rw.WriteHeader(http.StatusOK)
 }
 
-type PostNewRevocationNumsRequest struct {
-	RevocationNums []uint64
-}
-
 func (h *Handler) PostNewRevocationNums(rw http.ResponseWriter, req *http.Request){
 	glog.Infoln("Received PostNewRevocationNums Request")
 	if req.Method != "POST" {
-		writeWrongMethodResponse(&rw, "GET")
+		writeWrongMethodResponse(&rw, "POST")
 		return
 	}
 	decoder := json.NewDecoder(req.Body)
-	var newRevList PostNewRevocationNumsRequest
+	var newRevList ctca.PostNewRevocationNumsRequest
 	if err := decoder.Decode(&newRevList); err != nil {
 		writeErrorResponse(&rw, http.StatusBadRequest, fmt.Sprintf("Invalid PostNewRevocationNums Request: %v", err))
 		return
 	}
 	glog.Infoln(newRevList)
 	h.c.AddRevocationNums(&newRevList.RevocationNums)
+	rw.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) RevokeAndProduceSRD(rw http.ResponseWriter, req *http.Request) {
+	if req.Method != "GET" {
+		writeWrongMethodResponse(&rw, "GET")
+		return
+	}
+	glog.Infoln("Received RevokeAndProduceSRD request")
+	decoder := json.NewDecoder(req.Body)
+	var revAndProdSRDReq ctca.RevokeAndProduceSRDRequest
+	if err := decoder.Decode(&revAndProdSRDReq); err != nil {
+		writeErrorResponse(&rw, http.StatusBadRequest, fmt.Sprintf("Invalid RevokeAndProduceSRDRequest: %v", err))
+		return
+	}
+	glog.Infoln(revAndProdSRDReq)
+	srd, err := h.c.RevokeAndProduceSRD(revAndProdSRDReq.TotalCerts, revAndProdSRDReq.PercentRevoked)
+	if err != nil {
+		writeErrorResponse(&rw, http.StatusBadRequest, fmt.Sprintf("failed to produce SRDWithRevData for request: %v", err))
+		return
+	}
+	encoder := json.NewEncoder(rw)
+	if err := encoder.Encode(*srd); err != nil {
+		writeErrorResponse(&rw, http.StatusInternalServerError, fmt.Sprintf("Couldn't encode SRDWithRevData (%v) in response: %v", srd, err))
+		return
+	}
 	rw.WriteHeader(http.StatusOK)
 }

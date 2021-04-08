@@ -4,6 +4,8 @@ import (
 	"sync"
 	"time"
 	"fmt"
+	"math"
+	"math/rand"
 	"bytes"
 	"net/http"
 
@@ -140,7 +142,30 @@ func (c *CA) DeltaRevocationsToList() []uint64 {
 	return revList
 }
 
-func (c *CA) DoRevocationTransparencyTasks(revType string) error {
+// THIS IS A STRICTLY A METHOD USED FOR COLLECTING DATA 
+func (c *CA) RevokeAndProduceSRD(totalCerts uint64, percentRevoked uint8) (*mtr.SRDWithRevData, error) {
+	c.UpdateMMD()
+	numToRevoke := uint64(math.Floor(float64(totalCerts) * float64(percentRevoked) / 100))
+	revokedMap := make(map[uint64]bool)
+	revNumList := []uint64{}
+	for numToRevoke > 0 {
+		newNumToRevoke := uint64(rand.Intn(int(totalCerts)))
+		if _, ok := revokedMap[newNumToRevoke]; !ok {
+			revokedMap[newNumToRevoke] =  true
+			revNumList = append(revNumList, newNumToRevoke)
+			numToRevoke -= 1
+		}
+	}
+	c.AddRevocationNums(&revNumList)
+	revType := "Let's-Revoke"
+	srd, err := c.createNewMMDSRD(revType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create SRD at new MMD: %v", err)
+	}
+	return srd, nil
+}
+
+func (c *CA) createNewMMDSRD(revType string) (*mtr.SRDWithRevData, error) {
 	deltaRevList := c.DeltaRevocationsToList()
 	crvDelta := ctca.GetCRVDelta(deltaRevList)
 	currCRV, ok := c.RevocationObjMap[revType]
@@ -153,9 +178,16 @@ func (c *CA) DoRevocationTransparencyTasks(revType string) error {
 	// Create SRD
 	srd, err := CreateSRDWithRevData(newCRV, crvDelta, c.PreviousMMDTimestamp, c.CAID, tls.SHA256, c.Signer)
 	if err != nil {
-		return fmt.Errorf("failed to create SRD at new MMD: %v", err)
+		return nil, fmt.Errorf("failed to create SRD at new MMD: %v", err)
 	}
+	return srd, nil
+}
 
+func (c *CA) DoRevocationTransparencyTasks(revType string) error {
+	srd, err := c.createNewMMDSRD(revType)
+	if err != nil {
+		return fmt.Errorf("%v", err)
+	}
 	// Store the SRD
 	c.AddCASRD(srd)
 
@@ -252,7 +284,12 @@ func createRevocationData(deltaCRV *bitarray.BitArray, timestamp uint64, entityI
 }
 
 func (c *CA) UpdateMMD() error {
-	newMMDTimestamp := uint64(time.Now().Unix())
+	var newMMDTimestamp uint64
+	if c.PreviousMMDTimestamp == 0 {
+		newMMDTimestamp = uint64(time.Now().Unix())
+	} else {
+		newMMDTimestamp = c.PreviousMMDTimestamp +  (2 * c.MMD)
+	}
 	c.PreviousMMDTimestamp = newMMDTimestamp - c.MMD
 	return nil
 }

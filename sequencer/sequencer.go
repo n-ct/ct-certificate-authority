@@ -25,6 +25,7 @@ func Run(done chan bool, caInstance *ca.CA) error {
 		case <-ticker.C:
 			caInstance.UpdateMMD()
 			glog.Infoln("New MMD")
+			glog.Infof("PrevTimestamp: %v", caInstance.PreviousMMDTimestamp)
 			glog.Infof("DeltaRevocations: %v", caInstance.DeltaRevocations)
 
 			// Add delta revocations to crv
