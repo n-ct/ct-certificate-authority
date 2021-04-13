@@ -93,7 +93,7 @@ func (h *Handler) PostNewRevocationNums(rw http.ResponseWriter, req *http.Reques
 		writeErrorResponse(&rw, http.StatusBadRequest, fmt.Sprintf("Invalid PostNewRevocationNums Request: %v", err))
 		return
 	}
-	glog.Infoln(newRevList)
+	//glog.Infoln(newRevList)
 	h.c.AddRevocationNums(&newRevList.RevocationNums)
 	rw.WriteHeader(http.StatusOK)
 }
@@ -110,7 +110,6 @@ func (h *Handler) RevokeAndProduceSRD(rw http.ResponseWriter, req *http.Request)
 		writeErrorResponse(&rw, http.StatusBadRequest, fmt.Sprintf("Invalid RevokeAndProduceSRDRequest: %v", err))
 		return
 	}
-	glog.Infoln(revAndProdSRDReq)
 	srd, err := h.c.RevokeAndProduceSRD(revAndProdSRDReq.TotalCerts, revAndProdSRDReq.PercentRevoked)
 	if err != nil {
 		writeErrorResponse(&rw, http.StatusBadRequest, fmt.Sprintf("failed to produce SRDWithRevData for request: %v", err))

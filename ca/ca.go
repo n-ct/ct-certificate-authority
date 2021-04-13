@@ -144,6 +144,7 @@ func (c *CA) DeltaRevocationsToList() []uint64 {
 
 // THIS IS A STRICTLY A METHOD USED FOR COLLECTING DATA 
 func (c *CA) RevokeAndProduceSRD(totalCerts uint64, percentRevoked uint8) (*mtr.SRDWithRevData, error) {
+	start := time.Now()
 	c.UpdateMMD()
 	numToRevoke := uint64(math.Floor(float64(totalCerts) * float64(percentRevoked) / 100))
 	revokedMap := make(map[uint64]bool)
@@ -162,6 +163,10 @@ func (c *CA) RevokeAndProduceSRD(totalCerts uint64, percentRevoked uint8) (*mtr.
 	if err != nil {
 		return nil, fmt.Errorf("failed to create SRD at new MMD: %v", err)
 	}
+
+	duration := time.Since(start)
+	glog.Infof("Entire process took: %v", duration)
+
 	return srd, nil
 }
 
