@@ -36,7 +36,12 @@ type CA struct {
 
 // Create a new CA using the createCA function found in ca_setup.go
 func NewCA(caConfigName string, caListName string, logListName string) (*CA, error){
-	return createCA(caConfigName, caListName, logListName)
+	ca, err := createCA(caConfigName, caListName, logListName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create CA: %v", err)
+	}
+	ca.UpdateMMD()
+	return ca, nil
 }
 
 func (c *CA) AddRevocationNums(newRevocationNums *[]uint64) error {
@@ -145,7 +150,7 @@ func (c *CA) DeltaRevocationsToList() []uint64 {
 // THIS IS A STRICTLY A METHOD USED FOR COLLECTING DATA 
 func (c *CA) RevokeAndProduceSRD(totalCerts uint64, percentRevoked uint8) (*mtr.SRDWithRevData, error) {
 	start := time.Now()
-	c.UpdateMMD()
+	//c.UpdateMMD()
 	numToRevoke := uint64(math.Floor(float64(totalCerts) * float64(percentRevoked) / 100))
 	revokedMap := make(map[uint64]bool)
 	revNumList := []uint64{}
