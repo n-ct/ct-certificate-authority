@@ -45,29 +45,29 @@ func NewCA(caConfigName string, caListName string, logListName string) (*CA, err
 }
 
 func (c *CA) AddRevocationNums(newRevocationNums *[]uint64) error {
-	c.Lock()
+	//c.Lock()
 	for _, num := range *newRevocationNums {
 		c.DeltaRevocations[num] = true
 	}
-	c.Unlock()
+	//c.Unlock()
 	return nil
 }
 
 func (c *CA) AddCASRD(srdWithRevData *mtr.SRDWithRevData) (error) {
-	c.Lock()
+	//c.Lock()
 	revType := srdWithRevData.RevData.RevocationType
 	timestamp := srdWithRevData.RevData.Timestamp
 	if _, ok := c.CASignedDigestMap[revType]; !ok {
 		c.CASignedDigestMap[revType] = make(map[uint64] *mtr.SRDWithRevData)
 	}
 	c.CASignedDigestMap[revType][timestamp] = srdWithRevData
-	c.Unlock()
+	//c.Unlock()
 	return nil
 }
 
 func (c *CA) GetCASRD(revType string, timestamp uint64) (*mtr.SRDWithRevData, error) {
 	var caSRD *mtr.SRDWithRevData
-	c.RLock()
+	//c.Lock()
 	if _, ok := c.CASignedDigestMap[revType]; !ok {
 		return nil, fmt.Errorf("failed to find revType (%v) in caSRD map", revType)
 	}
@@ -75,12 +75,12 @@ func (c *CA) GetCASRD(revType string, timestamp uint64) (*mtr.SRDWithRevData, er
 		return nil, fmt.Errorf("failed to find timestamp (%v) in caSRD map", timestamp)
 	}
 	caSRD = c.CASignedDigestMap[revType][timestamp]
-	c.RUnlock()
+	//c.Unlock()
 	return caSRD, nil
 }
 
 func (c *CA) AddLogSRD(srdWithRevData *mtr.SRDWithRevData) (error) {
-	c.Lock()
+	//c.Lock()
 	revType := srdWithRevData.RevData.RevocationType
 	timestamp := srdWithRevData.RevData.Timestamp
 	logID := srdWithRevData.SRD.EntityID
@@ -91,13 +91,13 @@ func (c *CA) AddLogSRD(srdWithRevData *mtr.SRDWithRevData) (error) {
 		c.LogSignedDigestMap[revType][timestamp] = make(map[string] *mtr.SRDWithRevData)
 	}
 	c.LogSignedDigestMap[revType][timestamp][logID] = srdWithRevData
-	c.Unlock()
+	//c.Unlock()
 	return nil
 }
 
 func (c *CA) GetLogSRD(revType string, timestamp uint64, logID string) (*mtr.SRDWithRevData, error) {
 	var logSRD *mtr.SRDWithRevData
-	c.RLock()
+	//c.RLock()
 	if _, ok := c.LogSignedDigestMap[revType]; !ok {
 		return nil, fmt.Errorf("failed to find revType (%v) in caSRD map", revType)
 	}
@@ -108,13 +108,13 @@ func (c *CA) GetLogSRD(revType string, timestamp uint64, logID string) (*mtr.SRD
 		return nil, fmt.Errorf("failed to find logID (%v) in caSRD map", logID)
 	}
 	logSRD = c.LogSignedDigestMap[revType][timestamp][logID]
-	c.RUnlock()
+	//c.RUnlock()
 	return logSRD, nil
 }
 
 func (c *CA) GetRecentLogSRDCTObjecList(revType string, timestamp uint64) ([]mtr.CTObject, error) {
 	var logSRDs []mtr.CTObject
-	c.RLock()
+	//c.RLock()
 	if _, ok := c.LogSignedDigestMap[revType]; !ok {
 		return nil, fmt.Errorf("failed to find revType (%v) in caSRD map", revType)
 	}
@@ -128,14 +128,14 @@ func (c *CA) GetRecentLogSRDCTObjecList(revType string, timestamp uint64) ([]mtr
 		}
 		logSRDs = append(logSRDs, *logSRDCTObj)
 	}
-	c.RUnlock()
+	//c.RUnlock()
 	return logSRDs, nil
 }
 
 func (c *CA) ClearDeltaRevocations() error {
-	c.Lock()
+	//c.Lock()
 	c.DeltaRevocations = make(map[uint64]bool)
-	c.Unlock()
+	//c.Unlock()
 	return nil
 }
 
@@ -171,6 +171,8 @@ func (c *CA) RevokeAndProduceSRD(totalCerts uint64, percentRevoked uint8) (*mtr.
 
 	duration := time.Since(start)
 	glog.Infof("Entire process took: %v", duration)
+
+	c.AddCASRD(srd)
 
 	return srd, nil
 }

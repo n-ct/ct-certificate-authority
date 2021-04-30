@@ -110,15 +110,22 @@ func (h *Handler) RevokeAndProduceSRD(rw http.ResponseWriter, req *http.Request)
 		writeErrorResponse(&rw, http.StatusBadRequest, fmt.Sprintf("Invalid RevokeAndProduceSRDRequest: %v", err))
 		return
 	}
-	srd, err := h.c.RevokeAndProduceSRD(revAndProdSRDReq.TotalCerts, revAndProdSRDReq.PercentRevoked)
+
+	// TEMP FIX to access same data from same timestamp
+	srd, err := h.c.GetCASRD("Let's-Revoke", h.c.PreviousMMDTimestamp)
 	if err != nil {
-		writeErrorResponse(&rw, http.StatusBadRequest, fmt.Sprintf("failed to produce SRDWithRevData for request: %v", err))
-		return
+		srd, err = h.c.RevokeAndProduceSRD(revAndProdSRDReq.TotalCerts, revAndProdSRDReq.PercentRevoked)
+		if err != nil {
+			writeErrorResponse(&rw, http.StatusBadRequest, fmt.Sprintf("failed to produce SRDWithRevData for request: %v", err))
+			return
+		}
 	}
+
 	encoder := json.NewEncoder(rw)
 	if err := encoder.Encode(*srd); err != nil {
 		writeErrorResponse(&rw, http.StatusInternalServerError, fmt.Sprintf("Couldn't encode SRDWithRevData (%v) in response: %v", srd, err))
 		return
 	}
+
 	rw.WriteHeader(http.StatusOK)
 }
