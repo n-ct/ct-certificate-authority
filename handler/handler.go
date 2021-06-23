@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"encoding/json"
 	"net/http"
+	"bytes"
 
 	"github.com/golang/glog"
 	"github.com/n-ct/ct-certificate-authority/ca"
@@ -16,6 +17,7 @@ type Handler struct {
 	c *ca.CA
 }
 
+// Create a new Handler instance
 func NewHandler(c *ca.CA) Handler {
 	return Handler{c}
 }
@@ -30,6 +32,7 @@ func writeErrorResponse(rw *http.ResponseWriter, status int, body string) {
 	(*rw).Write([]byte(body))
 }
 
+// Handle a post request for an SRDWithRevData from a Logger
 func (h *Handler) PostLogSRDWithRevData(rw http.ResponseWriter, req *http.Request){
 	glog.Infoln("Received PostLogRevocationDigest Request")
 	if req.Method != "POST" {
@@ -63,6 +66,7 @@ func (h *Handler) PostLogSRDWithRevData(rw http.ResponseWriter, req *http.Reques
 	rw.WriteHeader(http.StatusOK)
 }
 
+// Handle a request to get the revocation status of the most recent MMD
 func (h *Handler) GetRevocationStatus(rw http.ResponseWriter, req *http.Request) {
 	glog.Infoln("Received GetRevocationStatus request")
 	if req.Method != "GET" {
@@ -81,6 +85,7 @@ func (h *Handler) GetRevocationStatus(rw http.ResponseWriter, req *http.Request)
 	rw.WriteHeader(http.StatusOK)
 }
 
+// Handle request to add new revoked certificate numbers
 func (h *Handler) PostNewRevocationNums(rw http.ResponseWriter, req *http.Request){
 	glog.Infoln("Received PostNewRevocationNums Request")
 	if req.Method != "POST" {
@@ -93,11 +98,11 @@ func (h *Handler) PostNewRevocationNums(rw http.ResponseWriter, req *http.Reques
 		writeErrorResponse(&rw, http.StatusBadRequest, fmt.Sprintf("Invalid PostNewRevocationNums Request: %v", err))
 		return
 	}
-	//glog.Infoln(newRevList)
 	h.c.AddRevocationNums(&newRevList.RevocationNums)
 	rw.WriteHeader(http.StatusOK)
 }
 
+// Handle request to revoke a certain number of certificates and to produce an SRD with the newly revoked certificates
 func (h *Handler) RevokeAndProduceSRD(rw http.ResponseWriter, req *http.Request) {
 	if req.Method != "GET" {
 		writeWrongMethodResponse(&rw, "GET")
@@ -127,5 +132,24 @@ func (h *Handler) RevokeAndProduceSRD(rw http.ResponseWriter, req *http.Request)
 		return
 	}
 
+	constSRD := srd.SRD
+	ct, err := mtr.ConstructCTObject(&constSRD)
+	glog.Infof("%v", ct)
+	if err != nil {
+		glog.Infof("%v", err)
+	}
+	size, _ := GetSize(ct)
+	glog.Infof("Size of srd: %v", size)
+
+
 	rw.WriteHeader(http.StatusOK)
+}
+
+// Convert given object to json and then get the size
+func GetSize(i interface{}) (int, error) {
+	b := new(bytes.Buffer)
+    if err := json.NewEncoder(b).Encode(i); err != nil {
+		return 0, fmt.Errorf("Failed to encode object of type (%T): %v", i, err)
+	}
+	return b.Len(), nil
 }

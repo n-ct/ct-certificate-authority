@@ -96,6 +96,7 @@ func handlerSetup(c *ca.CA) (*http.ServeMux) {
 	return serveMux
 }
 
+// Start the sequencer that keeps track of time for the MMD
 func startSequencer(caInstance *ca.CA) {
 	glog.Infoln("Starting sequencer")
 	seqdone := make(chan bool)
@@ -107,6 +108,7 @@ func startSequencer(caInstance *ca.CA) {
 	glog.Infoln("Sequencer started")
 }
 
+// Shut down the CA Server instance
 func shutdownServer(server *http.Server, returnCode int){
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
 	server.Shutdown(ctx)

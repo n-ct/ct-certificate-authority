@@ -9,6 +9,7 @@ import (
 	"github.com/n-ct/ct-certificate-authority/ca"
 )
 
+// Run the sequencer that will keep track of time for the MMD
 func Run(done chan bool, caInstance *ca.CA) error {
 	mmdStr := fmt.Sprintf("%v", caInstance.MMD) + "s"
 	mmdDur, err := time.ParseDuration(mmdStr)

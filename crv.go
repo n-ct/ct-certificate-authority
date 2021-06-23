@@ -13,10 +13,7 @@ const (
 	MaxBitsInRevocationNumber = 32
 )
 
-var (
-
-)
-
+// Compress a given crv using xz compression
 func CompressCRV(crv *bitarray.BitArray) ([]byte, error) {
 	serializedCRV, err := bitarray.Marshal(*crv)
 	if err != nil {
@@ -36,6 +33,7 @@ func CompressCRV(crv *bitarray.BitArray) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// Decompress a given xz compressed crv
 func DecompressCRV(compressedCRV []byte) (*bitarray.BitArray, error) {
 	buf := bytes.NewBuffer(compressedCRV)
     r, err := xz.NewReader(buf)
@@ -53,6 +51,7 @@ func DecompressCRV(compressedCRV []byte) (*bitarray.BitArray, error) {
 	return &crv, nil
 }
 
+// Convert a list of revocationNumbers to a crv bitarray of delta certificates
 func GetCRVDelta(revocationNumbers []uint64) (*bitarray.BitArray) {
 	maxNum := max(revocationNumbers)
 	crvDelta := bitarray.NewBitArray(maxNum + 1)	
@@ -62,6 +61,7 @@ func GetCRVDelta(revocationNumbers []uint64) (*bitarray.BitArray) {
 	return &crvDelta
 }
 
+// Convert a list of revocationNumbers to a crv bitarray
 func CreateCRV(revocationNumbers []uint64, length uint64) (*bitarray.BitArray) {
 	maxRevNum := max(revocationNumbers)
 	bitArrayLength := max([]uint64{maxRevNum, length})
@@ -73,15 +73,18 @@ func CreateCRV(revocationNumbers []uint64, length uint64) (*bitarray.BitArray) {
 	return &crvDelta
 }
 
+// OR the crv and delta crv to get the most recent version of the crv
 func ApplyCRVDeltaToCRV(crv, crvDelta *bitarray.BitArray) *bitarray.BitArray {
 	newCRV := (*crv).Or(*crvDelta)
 	return &newCRV
 }
 
+// Check the equality of two crvs
 func Equals(crv1, crv2 *bitarray.BitArray) bool {
 	return (*crv1).Equals(*crv2)
 }
 
+// Find the max value in a list
 func max(array []uint64) uint64 {
     max := uint64(0)
     for _, value := range array {

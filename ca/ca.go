@@ -44,6 +44,7 @@ func NewCA(caConfigName string, caListName string, logListName string) (*CA, err
 	return ca, nil
 }
 
+// Add the numbers of revoked certificates to DeltaRevocations
 func (c *CA) AddRevocationNums(newRevocationNums *[]uint64) error {
 	//c.Lock()
 	for _, num := range *newRevocationNums {
@@ -53,6 +54,7 @@ func (c *CA) AddRevocationNums(newRevocationNums *[]uint64) error {
 	return nil
 }
 
+// Add the SRD produced by the CA to the CASignedDigestMap
 func (c *CA) AddCASRD(srdWithRevData *mtr.SRDWithRevData) (error) {
 	//c.Lock()
 	revType := srdWithRevData.RevData.RevocationType
@@ -65,6 +67,7 @@ func (c *CA) AddCASRD(srdWithRevData *mtr.SRDWithRevData) (error) {
 	return nil
 }
 
+// Get a given SRD produced by the CA from the CASignedDigestMap
 func (c *CA) GetCASRD(revType string, timestamp uint64) (*mtr.SRDWithRevData, error) {
 	var caSRD *mtr.SRDWithRevData
 	//c.Lock()
@@ -79,6 +82,7 @@ func (c *CA) GetCASRD(revType string, timestamp uint64) (*mtr.SRDWithRevData, er
 	return caSRD, nil
 }
 
+// Add the SRD produced by a Logger to the LogSignedDigestMap
 func (c *CA) AddLogSRD(srdWithRevData *mtr.SRDWithRevData) (error) {
 	//c.Lock()
 	revType := srdWithRevData.RevData.RevocationType
@@ -95,6 +99,7 @@ func (c *CA) AddLogSRD(srdWithRevData *mtr.SRDWithRevData) (error) {
 	return nil
 }
 
+// Get a given SRD produced by a Logger from the LogSignedDigestMap
 func (c *CA) GetLogSRD(revType string, timestamp uint64, logID string) (*mtr.SRDWithRevData, error) {
 	var logSRD *mtr.SRDWithRevData
 	//c.RLock()
@@ -112,6 +117,7 @@ func (c *CA) GetLogSRD(revType string, timestamp uint64, logID string) (*mtr.SRD
 	return logSRD, nil
 }
 
+// Get a list of the Logger SRDs that were received in the most recent timestamp
 func (c *CA) GetRecentLogSRDCTObjecList(revType string, timestamp uint64) ([]mtr.CTObject, error) {
 	var logSRDs []mtr.CTObject
 	//c.RLock()
@@ -132,6 +138,7 @@ func (c *CA) GetRecentLogSRDCTObjecList(revType string, timestamp uint64) ([]mtr
 	return logSRDs, nil
 }
 
+// Clear DeltaRevocations data structure
 func (c *CA) ClearDeltaRevocations() error {
 	//c.Lock()
 	c.DeltaRevocations = make(map[uint64]bool)
@@ -139,6 +146,7 @@ func (c *CA) ClearDeltaRevocations() error {
 	return nil
 }
 
+// Convert the DeltaRevocations Map to a list
 func (c *CA) DeltaRevocationsToList() []uint64 {
 	revList := []uint64{}
 	for revNum := range c.DeltaRevocations {
@@ -177,6 +185,7 @@ func (c *CA) RevokeAndProduceSRD(totalCerts uint64, percentRevoked uint8) (*mtr.
 	return srd, nil
 }
 
+// During a new MMD, create a new SRD
 func (c *CA) createNewMMDSRD(revType string) (*mtr.SRDWithRevData, error) {
 	deltaRevList := c.DeltaRevocationsToList()
 	crvDelta := ctca.GetCRVDelta(deltaRevList)
@@ -195,6 +204,7 @@ func (c *CA) createNewMMDSRD(revType string) (*mtr.SRDWithRevData, error) {
 	return srd, nil
 }
 
+// Do all the tasks that are needed during a new MMD
 func (c *CA) DoRevocationTransparencyTasks(revType string) error {
 	srd, err := c.createNewMMDSRD(revType)
 	if err != nil {
@@ -204,21 +214,12 @@ func (c *CA) DoRevocationTransparencyTasks(revType string) error {
 	c.AddCASRD(srd)
 
 	// Send SRD to Logger
-	// UNCOMMENT THE POSTCASRD
-	// UNCOMMENT THE POSTCASRD
-	// UNCOMMENT THE POSTCASRD
-	// UNCOMMENT THE POSTCASRD
-	// UNCOMMENT THE POSTCASRD
-	// UNCOMMENT THE POSTCASRD
-	// UNCOMMENT THE POSTCASRD
-	// UNCOMMENT THE POSTCASRD
-	// UNCOMMENT THE POSTCASRD
-	// UNCOMMENT THE POSTCASRD
-	// UNCOMMENT THE POSTCASRD
+	// UNCOMMENT THE POSTCASRD when done with data collection
 	//PostCASRD(srd)	
 	return nil
 }
 
+// Create SRDWithRevData message
 func CreateSRDWithRevData(crv, deltaCRV *bitarray.BitArray, timestamp uint64, entityID string, hashAlgo tls.HashAlgorithm, signer *signature.Signer) (*mtr.SRDWithRevData, error) {
 	revData, err := createRevocationData(deltaCRV, timestamp, entityID)
 	if err != nil {
@@ -235,6 +236,7 @@ func CreateSRDWithRevData(crv, deltaCRV *bitarray.BitArray, timestamp uint64, en
 	return srdWithRevData, nil
 }
 
+// Create SRD message
 func createSRD(crv, deltaCRV *bitarray.BitArray, timestamp uint64, entityID string, hashAlgo tls.HashAlgorithm, signer *signature.Signer) (*mtr.SignedRevocationDigest, error) {
 	revDigest, err := createRevocationDigest(crv, deltaCRV, timestamp, hashAlgo)	
 	if err != nil {
@@ -252,6 +254,7 @@ func createSRD(crv, deltaCRV *bitarray.BitArray, timestamp uint64, entityID stri
 	return srd, nil
 }
 
+// Create RevocationDigest message
 func createRevocationDigest(crv, deltaCRV *bitarray.BitArray, timestamp uint64, hashAlgo tls.HashAlgorithm) (*mtr.RevocationDigest, error) {
 	compCRV, err := ctca.CompressCRV(crv)
 	if err != nil {
@@ -279,6 +282,7 @@ func createRevocationDigest(crv, deltaCRV *bitarray.BitArray, timestamp uint64, 
 	return revDigest, nil
 }
 
+// Create RevocationData message
 func createRevocationData(deltaCRV *bitarray.BitArray, timestamp uint64, entityID string) (*mtr.RevocationData, error) {
 	revType := "Let's-Revoke"
 	compDeltaCRV, err := ctca.CompressCRV(deltaCRV)
@@ -295,6 +299,7 @@ func createRevocationData(deltaCRV *bitarray.BitArray, timestamp uint64, entityI
 	return revData, nil
 }
 
+// Update the PreviousMMDTimestamp instance variable at a new timestamp
 func (c *CA) UpdateMMD() error {
 	var newMMDTimestamp uint64
 	if c.PreviousMMDTimestamp == 0 {
@@ -335,6 +340,7 @@ func (c *CA) PostCASRD(srd *mtr.SRDWithRevData) error {
 	return nil
 }
 
+// Verify the Signature of an SRD produced by a Logger
 func (c *CA) VerifyLogSRDSignature(srd *mtr.SignedRevocationDigest) error {
 	logID := srd.EntityID
 	logInfo, ok := c.LogInfoMap[logID]
@@ -345,10 +351,12 @@ func (c *CA) VerifyLogSRDSignature(srd *mtr.SignedRevocationDigest) error {
 	return VerifySRDSignature(srd, logKey)
 }
 
+// Verify the Signature of an SRD
 func VerifySRDSignature(srd *mtr.SignedRevocationDigest, key string) error {
 	return signature.VerifySignature(key, srd.RevDigest, srd.Signature)
 }
 
+// Create RevocationStatus message that contains the latests SRDs created by the CA and various Loggers
 func (c *CA) GetLatestRevocationStatus() (*ctca.RevocationStatus, error) {
 	latestTimestamp := c.PreviousMMDTimestamp - c.MMD
 	revType := "Let's-Revoke"
